@@ -1,0 +1,15 @@
+.dub
+docs.json
+__dummy.html
+docs/
+/lookuptable
+lookuptable.so
+lookuptable.dylib
+lookuptable.dll
+lookuptable.a
+lookuptable.lib
+lookuptable-test-*
+*.exe
+*.o
+*.obj
+*.lst

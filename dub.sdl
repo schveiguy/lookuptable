@@ -1,0 +1,5 @@
+name "lookuptable"
+description "Static lookup table for an array of values"
+authors "Steven Schveighoffer"
+copyright "Copyright © 2019, Steven Schveighoffer"
+license "Boost"
