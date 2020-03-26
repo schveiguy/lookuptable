@@ -1,4 +1,5 @@
-module lookup;
+module schlib.lookup;
+import std.range;
 
 private struct LookupNode(K, V, bool useTruthiness)
 {
@@ -83,14 +84,29 @@ private struct LookupTable(K, V, bool useTruthiness)
     }
 }
 
-LookupTable!(K, size_t, useTruthiness) indexLookup(bool useTruthiness = false, K)(K[] arr)
+LookupTable!(ElementType!R, size_t, useTruthiness) indexLookup(bool useTruthiness = false, R)(R rng) if (isRandomAccessRange!R)
 {
     // simple equation -- use 2x the number of elements but with one less to make it a little more randomized
-    LookupTable!(K, size_t, useTruthiness) result;
-    result.buckets = new result.Bucket[arr.length * 2 - 1];
+    LookupTable!(ElementType!R, size_t, useTruthiness) result;
+    result.buckets = new result.Bucket[rng.length * 2 - 1];
 
-    foreach(i, ref k; arr)
-        result._insert(k, i);
+    size_t i = 0;
+    static if(hasLvalueElements!R)
+    {
+        foreach(ref k; rng)
+        {
+            result._insert(k, i);
+            ++i;
+        }
+    }
+    else
+    {
+        foreach(k; rng)
+        {
+            result._insert(k, i++);
+            ++i;
+        }
+    }
 
     return result;
 }
