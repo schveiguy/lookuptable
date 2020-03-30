@@ -9,3 +9,7 @@ It should be slightly faster than an AA, and much less taxing on GC collections.
 Future improvements may include RAII possibilities (using malloc).
 
 An example use case may be an array of headers read from an HTTP connection, where you want to look up values based on the header name. You read the headers into an array, and then generate a lookup table based on that.
+
+There are 2 functions in here. `indexLookup` returns the mapping of the item in the given random access range to its index. `fieldLookup` is for values that have fields, or for using a lambda to generate the keys from the items. This version of the library will return the original item, but is indexed based on a field name, or based on a lambda to generate the key.
+
+Docs may be filled out at some point if I feel this needs more polish.

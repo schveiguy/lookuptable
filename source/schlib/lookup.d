@@ -34,6 +34,7 @@ private struct LookupTable(K, V, bool useTruthiness)
     import std.typecons : Nullable;
     private alias Bucket = LookupNode!(K, V, useTruthiness);
     private Bucket[] buckets;
+    alias KeyType = K;
 
     ref inout(V) opIndex(const(K) key) inout
     {
@@ -103,13 +104,14 @@ LookupTable!(ElementType!R, size_t, useTruthiness) indexLookup(bool useTruthines
     {
         foreach(k; rng)
         {
-            result._insert(k, i++);
+            result._insert(k, i);
             ++i;
         }
     }
 
     return result;
 }
+
 
 unittest
 {
@@ -121,4 +123,61 @@ unittest
         assert(lookup[n] == i, n);
         assert(lookup2[n] == i, n);
     }
+}
+
+struct LookupByField(K, R, bool useTruthiness) if (isRandomAccessRange!R)
+{
+    private R src;
+    private LookupTable!(K, size_t, useTruthiness) lookup;
+    alias Elem = ElementType!(R);
+
+    static if(hasLvalueElements!R)
+        inout(Elem)* opBinaryRight(string op : "in")(const(K) key) inout
+        {
+            if(auto i = key in lookup)
+                return &src[*i];
+            return null;
+        }
+
+    auto ref inout(Elem) opIndex()(const(K) key) inout
+    {
+        return src[lookup[key]];
+    }
+}
+
+auto fieldLookup(string fieldName, bool useTruthiness = false, R)(R src) if (isRandomAccessRange!R)
+{
+    return fieldLookup!((auto ref x) => __traits(getMember, x, fieldName), useTruthiness)(src);
+}
+
+auto fieldLookup(alias genKey, bool useTruthiness = false, R)(R src) if (isRandomAccessRange!R && is(typeof(genKey(src.front))))
+{
+    import std.algorithm : map;
+    auto idxlookup = indexLookup(src.save.map!(genKey));
+    return LookupByField!(idxlookup.KeyType, R, useTruthiness)(src.save, idxlookup);
+}
+
+unittest
+{
+    static struct S
+    {
+        int intval;
+        string stringval;
+    }
+
+    auto src = [S(1, "hi"), S(2, "there"), S(3, "foo")];
+    auto byInt = src.fieldLookup!"intval";
+    auto byString = src.fieldLookup!((ref x) => x.stringval);
+
+    foreach(ref x; src)
+    {
+        assert(byInt[x.intval] == x);
+        assert(byString[x.stringval] == x);
+
+        assert(x.intval in byInt && *(x.intval in byInt) == x);
+        assert(x.stringval in byString && *(x.stringval in byString) == x);
+    }
+
+    assert(!("bar" in byString));
+    assert(!(5 in byInt));
 }
