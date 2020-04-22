@@ -48,20 +48,23 @@ private struct LookupTable(K, V, bool useTruthiness)
 
     inout(V)* opBinaryRight(string op : "in")(const(K) key) inout
     {
-        auto hash = hashOf(key);
-        auto idx = hash % buckets.length;
-        foreach(ref b; buckets[idx .. $])
-            if(!b)
-                // this is where it would have gone...
-                return null;
-            else if(b.hash == hash && b.key == key)
-                return &b.value;
-        foreach(ref b; buckets[0 .. idx])
-            if(!b)
-                // this is where it would have gone...
-                return null;
-            else if(b.hash == hash && b.key == key)
-                return &b.value;
+        if(buckets.length)
+        {
+            auto hash = hashOf(key);
+            auto idx = hash % buckets.length;
+            foreach(ref b; buckets[idx .. $])
+                if(!b)
+                    // this is where it would have gone...
+                    return null;
+                else if(b.hash == hash && b.key == key)
+                    return &b.value;
+            foreach(ref b; buckets[0 .. idx])
+                if(!b)
+                    // this is where it would have gone...
+                    return null;
+                else if(b.hash == hash && b.key == key)
+                    return &b.value;
+        }
         return null;
     }
 
@@ -89,6 +92,9 @@ LookupTable!(ElementType!R, size_t, useTruthiness) indexLookup(bool useTruthines
 {
     // simple equation -- use 2x the number of elements but with one less to make it a little more randomized
     LookupTable!(ElementType!R, size_t, useTruthiness) result;
+    if(rng.length == 0)
+        // just return an empty table.
+        return result;
     result.buckets = new result.Bucket[rng.length * 2 - 1];
 
     size_t i = 0;
@@ -180,4 +186,13 @@ unittest
 
     assert(!("bar" in byString));
     assert(!(5 in byInt));
+}
+
+unittest
+{
+    // test lookuptable on empty range.
+    int[] arr;
+    auto byIdx = arr.indexLookup;
+    assert(byIdx.buckets.length == 0);
+    assert(!(0 in byIdx));
 }
