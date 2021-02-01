@@ -52,18 +52,13 @@ private struct LookupTable(K, V, bool useTruthiness)
         {
             auto hash = hashOf(key);
             auto idx = hash % buckets.length;
-            foreach(ref b; buckets[idx .. $])
-                if(!b)
-                    // this is where it would have gone...
-                    return null;
-                else if(b.hash == hash && b.key == key)
-                    return &b.value;
-            foreach(ref b; buckets[0 .. idx])
-                if(!b)
-                    // this is where it would have gone...
-                    return null;
-                else if(b.hash == hash && b.key == key)
-                    return &b.value;
+            static foreach(const x; 0 .. 2)
+                foreach(ref b; x ? buckets[0 .. idx] : buckets[idx .. $])
+                    if(!b)
+                        // this is where it would have gone...
+                        return null;
+                    else if(b.hash == hash && b.key == key)
+                        return &b.value;
         }
         return null;
     }
@@ -72,18 +67,13 @@ private struct LookupTable(K, V, bool useTruthiness)
     {
         auto hash = hashOf(key);
         auto idx = hash % buckets.length;
-        foreach(ref b; buckets[idx .. $])
-            if(!b || (b.hash == hash && b.key == key))
-            {
-                b = Bucket(hash, key, val);
-                return;
-            }
-        foreach(ref b; buckets[0 .. idx])
-            if(!b || (b.hash == hash && b.key == key))
-            {
-                b = Bucket(hash, key, val);
-                return;
-            }
+        static foreach(const x; 0 .. 2)
+            foreach(ref b; x ? buckets[0 .. idx] : buckets[idx .. $])
+                if(!b || (b.hash == hash && b.key == key))
+                {
+                    b = Bucket(hash, key, val);
+                    return;
+                }
         assert(0); // should not get here.
     }
 }
